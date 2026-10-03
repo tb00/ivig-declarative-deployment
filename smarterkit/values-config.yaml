@@ -19,6 +19,7 @@ general:
       pgcerts: false
       pgcreds: false
       regcred: false
+    useExternalRegistry: false
   license:
     activationKey:
     accepted: false
