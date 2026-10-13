@@ -30,6 +30,16 @@ patch /opt/IBM/TDI/jvm/jre/conf/security/java.security <<EOF
 > security.provider.11=JdkLDAP
 > security.provider.12=JdkSASL
 > security.provider.13=SunPKCS11
+174,177c175,178
+< RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.desc.hash = SHA256:7a1b8a1b9e77b021a4ed8acf97b90f92d9f262105c3fa70ff0fc3622587833c9
+< RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.desc.number = Certificate #XXX
+< RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.desc.policy = https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/
+< RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.desc.sunsetDate = 2026-09-21
+---
+> RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.desc.hash = SHA256:f905b6c69c3538c87ca915aacc502de55a6b711ed799da89afe872f87d4a9b3b
+> RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.desc.number = Certificate #4755
+> RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.desc.policy = https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/4755
+> RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3.desc.sunsetDate = 2029-08-08
 527c528
 < securerandom.strongAlgorithms=NativePRNGBlocking:SUN,DRBG:SUN
 ---
