@@ -9,7 +9,7 @@ clusterUrl: https://kubernetes.default.svc
 
 images:
   isvart: icr.io/isvg/adapter-runtime:11.0.3.0
-  isvgim: icr.io/isvg/identity-manager:11.0.3.0
+  isvgim: icr.io/isvg/identity-manager:11.0.3.0_20261029
   isvdi: icr.io/isvdi/verify-directory-integrator-dispatcher:11.0.0.1
   isvd: icr.io/isvd/verify-directory-server:11.0.0.1
   isvdproxy: icr.io/isvd/verify-directory-proxy:11.0.0.1
@@ -22,6 +22,7 @@ images:
 
 storage:
   className: local-path
+  # NOTE: this setting only affects isvdi-pvc and isvart-pvc
   mode: ReadWriteOnce
   volumes:
     isvart: 1Gi
