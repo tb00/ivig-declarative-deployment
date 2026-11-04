@@ -681,6 +681,26 @@ kubectl delete pod test-rwx-pvc-binder
 kubectl delete pvc test-rwx-pvc
 ```
 
+### Unexpected ConfigMap size limits
+
+Symptom:
+
+Error message `"..." is invalid: metadata.annotations: Too long: must have at most 262144 bytes` during update of ConfigMap (typically `isvgimdata2`).
+
+Root cause explained:
+
+While Kubernetes documentation states that a ConfigMap has a size limit of 1 MB (due to etcd constraints), hitting an unexpected 256KB limit with the error message  is a classic Kubernetes quirk. Within the current project, this error might typically be observed with a bulky `isvgimdata2` ConfigMap.
+
+This project performs declarative object configuration rather than imperative commands, and manages resources exclusively via `kubectl apply`.
+
+During a `kubectl apply` command, which uses client-side apply by default, the full content sent via the `apply` command is stored to the annotation `kubectl.kubernetes.io/last-applied-configuration` of the K8s resource to be updated. As annotations are limited to hold 256KB of content, this becomes a bottleneck for the ConfigMap which could otherwise take up to 1MB.
+
+Solution:
+
+The recommended solution is to use [server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) which is a standard K8s feature not constrained by the 256KB annotation size limit. With server-side apply we create and modify objects declaratively by submitting their **desired state**, also called a **fully specified intent**, a partial object that only includes the fields and values for which the we have an opinion. That intent either creates a new object with default values for unspecified fields, or is combined with the existing object by the K8s API server.
+
+Use `kubectl apply --server-side`.
+
 ### Further Hints
 
 ~When using the demo setup script `secrets-setup.sh`, please note that GNU grep 3.6 (from 2020, shipped with CentOS 9) yields abnormal behavior. Use a more recent version of grep (see section [Components and Dependencies](#components-and-dependencies)).~ This issue is resolved with version 2.3.3.

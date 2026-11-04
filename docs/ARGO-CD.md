@@ -141,3 +141,56 @@ It is a good practice to specify a stage-specific certificate directory by setti
 
 However, the best practice is to not store any PKI/x509 related data (not even public keys/certificates) in Git, but source these from Vault (or a comparable alternative) dynamically by toggling `general.install.externalSecret.*certs` in `values-config.yaml`.
 
+### Unexpected ConfigMap size limits
+
+While Kubernetes documentation states that a ConfigMap has a size limit of 1 MB (due to etcd constraints), hitting an unexpected 256KB limit with the error message `"..." is invalid: metadata.annotations: Too long: must have at most 262144 bytes` is a classic Kubernetes quirk. Within the current project, this error might typically be observed with a bulky `isvgimdata2` ConfigMap.
+
+Argo CD performs declarative object configuration rather than imperative commands, a "sync" in Argo CD manages resources exclusively by synchronising the **desired state** to the live K8s resources in the cluster.
+
+A "sync" uses client-side apply by default, where the full desired state is stored to the annotation `kubectl.kubernetes.io/last-applied-configuration` of the K8s resource to be updated. As annotations are limited to hold 256KB of content, this becomes a bottleneck for the ConfigMap which could otherwise take up to 1MB.
+
+The recommended solution is to use [server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) which is a standard K8s feature not constrained by the 256KB annotation size limit. With server-side apply we create and modify objects declaratively by submitting their desired state, also called a **fully specified intent**, a partial object that only includes the fields and values for which the we have an opinion. That intent either creates a new object with default values for unspecified fields, or is combined with the existing object by the K8s API server.
+
+To configure your Argo CD project to use server-side apply, set `ServerSideApply=true` under `spec.syncPolicy.syncOptions` in your application manifest.
+
+### Permanent false positive OutOfSync status with Server-Side Apply
+
+There are multiple reincarnations of a [known Argo CD issue](https://github.com/argoproj/argo-cd/issues/11143) where externally set default values for fields not included in the desired state erroneously trigger OutOfSync status for the affected K8s resource, which cannot be resolved and cleared by Argo CD "sync".
+
+In this project, one would observe this issue with `apiVersion` and `kind` fields of the `volumeClaimTemplate` of StatefulSet `isvgim`. Further, when using the optional Vault integration, fields `conversionStrategy`, `decodingStrategy` and `metadataPolicy` of External Secrets are set by the External Secrets Operator and trigger the same issue during Argo CD "diff".
+
+One solution is to configure Argo CD to ignore differences in the fields which are not part of the desired state but receive their default values from somewhere else. When Server-Side Apply is used, the `ignoreDifferences` section shown below should be added to the application manifest.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+spec:
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      enabled: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+  ignoreDifferences:
+    - group: "apps"
+      kind: "StatefulSet"
+      jqPathExpressions:
+        - ".spec.volumeClaimTemplates[].apiVersion"
+        - ".spec.volumeClaimTemplates[].kind"
+    - group: "external-secrets.io"
+      kind: "ExternalSecret"
+      jqPathExpressions:
+        - ".spec.dataFrom[].extract.conversionStrategy"
+        - ".spec.dataFrom[].extract.decodingStrategy"
+        - ".spec.dataFrom[].extract.metadataPolicy"
+```
+
+Another approach to solve the issue would be to use client-side apply for some resources and server-side apply for others. This is achieved by modifying the Helm templates for any object the sync options of which shall differ from the global setting. The following annotation can be used to set sync options on a resource level, including pinning the `ServerSideApply` flag to `true` or `false`.
+
+```yaml
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: ServerSideApply=true
+```
