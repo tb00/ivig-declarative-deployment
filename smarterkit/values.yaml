@@ -9,7 +9,7 @@ clusterUrl: https://kubernetes.default.svc
 
 images:
   isvart: icr.io/isvg/adapter-runtime:11.0.3.0
-  isvgim: icr.io/isvg/identity-manager:11.0.3.0_20261029
+  isvgim: icr.io/isvg/identity-manager:11.0.3_FP0000_HF01
   isvdi: icr.io/isvdi/verify-directory-integrator-dispatcher:11.0.0.1
   isvd: icr.io/isvd/verify-directory-server:11.0.0.1
   isvdproxy: icr.io/isvd/verify-directory-proxy:11.0.0.1
