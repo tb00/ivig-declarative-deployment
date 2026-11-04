@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.5.2 (2026-11-05)
+
+This version includes improvements for ISVDI, an IVIG image update and docs
+
+Implement simpler and more flexible volume mounting in ISVDI. Rather than hardcoding individual script files to be mounted under `/home/isvdi`, all files from the ConfigMap `isvgimsdi` are mounted to `/home/isvdi/init`. The directory `/tmp/isvgimsdi` is populated via K8s secret `isvdicerts` only, and `YAML_CONFIG_FILE` is loaded from `/home/isvdi/init/isvdi_config.yaml`. This results in a simpler, flexibly extensible configuration, eliminates projected volumes and redundant mounting of the same files to multiple paths. It allows including new scripts in a declarative manner, without having to modify the Helm templates, and without having to pre-populate the PVC with scripts which would inherently imply a phased approach.
+
+Enhance ISVDI init script autodiscovery introduced in 2.3.6 to first scan directory `/home/isvdi/init` (populated via ConfigMap), then the directory `scripts` within the ISVDI solution directory (located on the PVC, it may or may not exist).
+
+Further improvements:
+- disable `general.json-logging` in `isvdi_config.yaml` by default (it fails)
+- use `identity-manager:11.0.3_FP0000_HF01`: hotfix + base OS security update
+
+Documentation updates:
+- add comment in `values.yaml` to clarify where `storage.mode` is used
+- add troubleshooting for 256KB vs 1MB ConfigMap limit with client-side apply
+- add troubleshooting for OutOfSync Argo CD with server-side apply enabled
+
 ## 2.5.1 (2026-10-29)
 
 This version enables declarative setup of external user registry
